@@ -89,15 +89,6 @@ static const char* SERVICE_NAME = "org.alljoyn.SensorLightCamera";
 static const char* SERVICE_PATH = "/org/alljoyn/SensorLightCamera/Sensor";
 static const SessionPort SERVICE_PORT = 25;
 
-// ループ用.
-static volatile sig_atomic_t sigFlag = false;
-
-static void CDECL_CALL SigIntHandler(int sig)
-{
-	QCC_UNUSED(sig);
-	sigFlag = true;
-}
-
 class HumanSensor
 {
 private:
@@ -287,30 +278,30 @@ private:
 	public:
 	SensorBus()
 	{
+	}
+
+	void ThreadStart()
+	{
 		auto sbj = rxcpp::subjects::subject<bool>();
 		auto sub = sbj.get_subscriber();
 		sensor = unique_ptr<HumanSensor>(new HumanSensor(&sub));
 
 		auto source = sbj.get_observable();
-//		auto trigger = rxcpp::observable<>::timer(std::chrono::minutes(30));
-//
-//		time_t currentTime;
-//		time(&currentTime);
-//		auto diffPublishTime = source.filter([&](bool b){
-//			time_t tmpTime;
-//			time(&tmpTime);
-//			auto diffSecond = difftime(tmpTime, currentTime);
-//			printf("diffTime:%f, value:%d", diffSecond, b);
-//			currentTime = tmpTime;
-//			return diffSecond > 60;
-//		}).map([](bool b){ return (long)1; });
-		
-		rxcpp::observable<>::timer(std::chrono::minutes(3))
-			.subscribe([&](long l){
-				this->SendNotification(true);
-			});
+		auto trigger = rxcpp::observable<>::timer(std::chrono::minutes(30));
 
-	    source
+		time_t currentTime;
+		time(&currentTime);
+		auto diffPublishTime = source.filter([&](bool b){
+			time_t tmpTime;
+			time(&tmpTime);
+			auto diffSecond = difftime(tmpTime, currentTime);
+			printf("diffTime:%f, value:%d", diffSecond, b);
+			currentTime = tmpTime;
+			return diffSecond > 60;
+		}).map([](bool b){ return (long)1; });
+
+		// 30分後か、イベントの発行間隔が1分以上開いたらスキップ解除.
+	    source.skip_until(trigger.merge(diffPublishTime))
 		.subscribe([&](bool b){
 			printf("onNext:%d", b);
 			this->SendSignal(b);
@@ -348,6 +339,9 @@ private:
 
 		aboutObj = new AboutObj(*busAtt);
 		aboutObj->Announce(sp, *aboutData);
+
+		while(1)
+	        this_thread::sleep_for(std::chrono::milliseconds(100));
 	}
 
 	~SensorBus()
@@ -365,25 +359,6 @@ private:
 
 		//AllJoynRouterShutdown();
 		AllJoynShutdown();
-	}
-
-	QStatus SendNotification(bool ret)
-	{
-		NotificationMessageType messageType = INFO;
-
-		vector<NotificationText> vecMessages;
-		NotificationText textToSend1("ja", "test");
-		vecMessages.push_back(textToSend1);
-
-
-		map<qcc::String, qcc::String> customAttributes = {
-			{ "sensor",  ret ? "true" : "false" },
-		};
-
-		Notification notification(messageType, vecMessages);
-		notification.setCustomAttributes(customAttributes);
-
-		return ntfSender->send(notification, 0);
 	}
 
 	void SendSignal(bool ret)
@@ -413,6 +388,7 @@ private:
 	}
 };
 
+thread* t;
 // メイン処理.
 int CDECL_CALL main(int argc, char** argv, char** envArg)
 {
@@ -420,15 +396,25 @@ int CDECL_CALL main(int argc, char** argv, char** envArg)
 	QCC_UNUSED(argv);
 	QCC_UNUSED(envArg);
 
+	printf("start¥n");
 	SensorBus* bus = new SensorBus();
 
+	t = new thread([bus](){
+		printf("thred srsrt¥n");
+		bus->ThreadStart();
+	});
+
 	// ctrl-c受付.
-	signal(SIGINT, SigIntHandler);
+	signal(SIGINT, [](int sig) {
+		printf("detatch");
+		t->detach();
+	});
 
-	while (sigFlag == false) {
-		usleep(100 * 1000);
-	}
+	printf("join¥n");
+	t->join();
 
+	delete t;
 	delete bus;
+	printf("end¥n");
 	return 0;
 }
