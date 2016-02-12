@@ -7,40 +7,29 @@ using namespace services;
 MyBusController::MyBusController(std::function<void(int)> _digitalWrite) :
 DigitalWrite(_digitalWrite)
 {
-	auto sbj = rxcpp::subjects::subject<bool>();
-	auto sub = sbj.get_subscriber();
-
-	auto source = sbj.get_observable();
-
-	rxcpp::observable<>::timer(std::chrono::minutes(3))
-		.subscribe([&](long l){
-			this->SendNotification(true);
-		});
-
-    source
-	.subscribe([&](bool b){
-		printf("onNext:%d", b);
-		this->SendSignal(b);
-	});
-
 	AllJoynInit();
 	//AllJoynRouterInit();
 
 	printf("AllJoyn Library version: %s.\n", ajn::GetVersion());
 
-	busAtt = new ajn::BusAttachment("SensorAbout", true);
-
-	busListener = std::unique_ptr<MyBusListener>(new MyBusListener(busAtt));
-	busAtt->RegisterBusListener(*busListener);
-
+	busAtt = std::shared_ptr<ajn::BusAttachment>(new ajn::BusAttachment("LightAbout", true));
 	busAtt->Start();
+	busAtt->Connect();
 
-	const ajn::InterfaceDescription* intf = createInterfaceDescription(busAtt);
+	aboutListener = std::shared_ptr<MyAboutListener>(new MyAboutListener(busAtt));
+	busAtt->RegisterAboutListener(*aboutListener);
+
+	auto nsrv = ajn::services::NotificationService::getInstance();
+	notificationReceiver = std::unique_ptr<MyNotificationReceiver>(new MyNotificationReceiver([](int b) {}));
+	nsrv->initReceive(busAtt.get(), notificationReceiver.get());
+
+	const ajn::InterfaceDescription* intf = createInterfaceDescription(busAtt.get());
+
+	busListener = std::unique_ptr<MyBusListener>(new MyBusListener(busAtt.get()));
+	busAtt->RegisterBusListener(*busListener);
 
 	busObj = new MyBusObject(Const::SERVICE_PATH, intf);
 	busAtt->RegisterBusObject(*busObj);
-
-	busAtt->Connect();
 
 	ntfServ = ajn::services::NotificationService::getInstance();
 	QCC_SetDebugLevel(logModules::NOTIFICATION_MODULE_LOG_NAME, logModules::ALL_LOG_LEVELS);
@@ -51,10 +40,11 @@ DigitalWrite(_digitalWrite)
 
 	aboutData = std::unique_ptr<ajn::AboutData>(getAboutData());
 
-	ntfSender = std::unique_ptr<ajn::services::NotificationSender>(ntfServ->initSend(busAtt, aboutData.get()));
+	ntfSender = std::unique_ptr<ajn::services::NotificationSender>(ntfServ->initSend(busAtt.get(), aboutData.get()));
 
-	aboutObj = new AboutObj(*busAtt);
+	aboutObj = new AboutObj(*busAtt, BusObject::ANNOUNCED);
 	aboutObj->Announce(sp, *aboutData);
+	busAtt->WhoImplements(NULL);
 };
 
 MyBusController::~MyBusController()
@@ -64,8 +54,6 @@ MyBusController::~MyBusController()
 	aboutObj->Unannounce();
 	delete aboutObj;
 	aboutObj = nullptr;
-	delete busAtt;
-	busAtt = nullptr;
 	delete busObj;
 	busObj = nullptr;
 
@@ -79,14 +67,14 @@ ajn::AboutData* MyBusController::getAboutData()
 	uint8_t appId[] = { 0xDB, 0xC5, 0xB5, 0xA2,
 	                    0x5D, 0x9D, 0x4C, 0x9E,
 	                    0x86, 0xD6, 0x94, 0x95,
-	                    0x85, 0x8D, 0x85, 0x3B };
+	                    0x85, 0x8D, 0x85, 0x3C };
 	aboutData->SetAppId(appId, 16);
-	aboutData->SetDeviceName("SensorƒfƒoƒCƒX");
-	aboutData->SetDeviceId("930b90a1-3d46-4342-ba3a-5ec8c5619571");
-	aboutData->SetAppName("SensorƒAƒvƒŠ");
-	aboutData->SetManufacturer("Ž©ì");
+	aboutData->SetDeviceName("Lightãƒ‡ãƒã‚¤ã‚¹");
+	aboutData->SetDeviceId("930b90a1-3d46-4342-ba3a-5ec8c5619572");
+	aboutData->SetAppName("Lightã‚¢ãƒ—ãƒª");
+	aboutData->SetManufacturer("è‡ªä½œ");
 	aboutData->SetModelNumber("0");
-	aboutData->SetDescription("lŠ´ƒZƒ“ƒT[‚Å‚·B");
+	aboutData->SetDescription("ãƒ©ã‚¤ãƒˆON/OFF");
 	aboutData->SetDateOfManufacture("2016-01-15");
 	aboutData->SetSoftwareVersion("0.0.1");
 	aboutData->SetHardwareVersion("0.0.1");
@@ -99,38 +87,45 @@ const ajn::InterfaceDescription* MyBusController::createInterfaceDescription(ajn
 {
 	qcc::String iface = "<node name='" + qcc::String(Const::SERVICE_PATH) + "'>"
 	"<interface name='" + qcc::String(Const::INTERFACE_NAME) + "'>"
-	"<signal name='sensord' sessionless='false'>"
+	"<signal name='lit' sessionless='false'>"
 		"<arg type='b'/>"
 	"</signal>"
-	"<property name='sensor' type='b' access='read'/>"
+	"<property name='light' type='b' access='read'/>"
 	"</interface>"
 	"</node>";
 
 	_busAtt->CreateInterfacesFromXml(iface.c_str());
     const ajn::InterfaceDescription* intf = _busAtt->GetInterface(Const::INTERFACE_NAME);
 
-	sensed = intf->GetSignal("sensed");
+	lit = intf->GetSignal("lit");
 
 	return intf;
 };
 
 QStatus MyBusController::SendNotification(bool ret)
 {
-	NotificationMessageType messageType = INFO;
+	std::string str(ret ? "true" : "false");
+	std::string text("light: " + str);
 
-	std::vector<NotificationText> vecMessages;
-	NotificationText textToSend1("ja", "test");
-	vecMessages.push_back(textToSend1);
+	/* ç¾åœ¨æ™‚åˆ»ã®å–å¾— */
+	time_t timer;
+	time(&timer);
 
+	struct tm* localTime = localtime(&timer);
+	printf("Send Notification(%s): %02d:%02d:%02d\n", str.c_str(), localTime->tm_hour, localTime->tm_min, localTime->tm_sec);
 
-	std::map<qcc::String, qcc::String> customAttributes = {
-		{ "sensor",  ret ? "true" : "false" },
+	std::vector<NotificationText> vecMessages = {
+		NotificationText("ja", qcc::String(text.c_str(), text.size()))
 	};
 
-	Notification notification(messageType, vecMessages);
+	std::map<qcc::String, qcc::String> customAttributes = {
+		{ "light",  qcc::String(str.c_str(), str.size()) },
+	};
+
+	Notification notification(NotificationMessageType::INFO, vecMessages);
 	notification.setCustomAttributes(customAttributes);
 
-	return ntfSender->send(notification, 0);
+	return ntfSender->send(notification, 7200);
 };
 
 void MyBusController::SendSignal(bool ret)
@@ -142,7 +137,7 @@ void MyBusController::SendSignal(bool ret)
 
 	time_t timer;
 
-	/* Œ»ÝŽž‚ÌŽæ“¾ */
+	/* ç¾åœ¨æ™‚åˆ»ã®å–å¾— */
 	time(&timer);
 
 	struct tm* localTime = localtime(&timer);
@@ -151,7 +146,7 @@ void MyBusController::SendSignal(bool ret)
 
 	busObj->Signal(NULL,							// NULL for broadcast signals.
 					0,								// For broadcast or sessionless signals, the sessionId must be 0.
-					*sensed,						// Interface member of signal being emitted.
+					*lit,						// Interface member of signal being emitted.
 					arg, 							// The arguments for the signal (can be NULL).
 					1, 								// The number of arguments.
 					0, 								// timeToLive.

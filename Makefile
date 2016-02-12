@@ -3,7 +3,7 @@
 CXX:=/usr/bin/arm-linux-gnueabihf-g++
 LD:=/usr/bin/arm-linux-gnueabihf-gcc
 
-OBJS:= LightAbout.o MyBusObject.o MyBusListener.o MyBusController.o
+OBJS:= LightAbout.o MyBusObject.o MyBusListener.o MyBusController.o MyAboutListener.o MyNotificationReceiver.o
 
 CXXFLAGS:=-std=gnu++11 -g -march=armv6 -mthumb-interwork -pipe \
           -Wall -Werror -Wl,--fix-cortex-a8 \
@@ -42,6 +42,14 @@ MyBusListener.o: src/MyBusListener.cpp
 
 #.PHONY: MyBusController.o
 MyBusController.o: src/MyBusController.cpp 
+	$(CXX) -o $@ -c $< $(CXXFLAGS) $(INCLUDES) 
+
+#.PHONY: MyAboutListener.o
+MyAboutListener.o: src/MyAboutListener.cpp 
+	$(CXX) -o $@ -c $< $(CXXFLAGS) $(INCLUDES) 
+
+#.PHONY: MyNotificationReceiver.o
+MyNotificationReceiver.o: src/MyNotificationReceiver.cpp 
 	$(CXX) -o $@ -c $< $(CXXFLAGS) $(INCLUDES) 
 
 .PHONY: clean

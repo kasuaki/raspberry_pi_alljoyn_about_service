@@ -5,10 +5,10 @@ using namespace qcc;
 using namespace ajn;
 using namespace services;
 
-const char* Const::INTERFACE_NAME = "org.alljoyn.SensorLightCamera.Sensor";
-const char* Const::SERVICE_NAME = "org.alljoyn.SensorLightCamera";
-const char* Const::SERVICE_PATH = "/org/alljoyn/SensorLightCamera/Sensor";
-const ajn::SessionPort Const::SERVICE_PORT = 25;
+const char* Const::INTERFACE_NAME = "SensorLightCamera.Light";
+const char* Const::SERVICE_NAME = "SensorLightCamera";
+const char* Const::SERVICE_PATH = "Light";
+const ajn::SessionPort Const::SERVICE_PORT = 26;
 
 static const int pin_out = 18;
 
