@@ -7,8 +7,8 @@ using namespace services;
 
 const char* Const::INTERFACE_NAME = "SensorLightCamera.Light";
 const char* Const::SERVICE_NAME = "SensorLightCamera";
-const char* Const::SERVICE_PATH = "Light";
-const ajn::SessionPort Const::SERVICE_PORT = 26;
+const char* Const::SERVICE_PATH = "/Light";
+const ajn::SessionPort Const::SERVICE_PORT = 25;
 
 static const int pin_out = 18;
 
@@ -22,6 +22,7 @@ static volatile sig_atomic_t sigFlag = false;
 
 static void CDECL_CALL SigIntHandler(int sig)
 {
+	printf("SigIntHandler\n");
 	QCC_UNUSED(sig);
 	sigFlag = true;
 }
@@ -37,7 +38,7 @@ int CDECL_CALL main(int argc, char** argv, char** envArg)
 	pinMode(pin_out, OUTPUT);
 	DigitalWrite(0);
 
-	MyBusController* bus = new MyBusController(DigitalWrite);
+	auto bus = std::unique_ptr<MyBusController>(new MyBusController(DigitalWrite));
 
 	// ctrl-c受付.
 	signal(SIGINT, SigIntHandler);
@@ -46,6 +47,6 @@ int CDECL_CALL main(int argc, char** argv, char** envArg)
 		usleep(100 * 1000);
 	}
 
-	delete bus;
+	bus.reset(nullptr);
 	return 0;
 }

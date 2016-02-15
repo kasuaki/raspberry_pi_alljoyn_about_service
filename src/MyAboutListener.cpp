@@ -3,7 +3,7 @@
 using namespace qcc;
 using namespace ajn;
 
-MyAboutListener::MyAboutListener(std::shared_ptr<ajn::BusAttachment> _busAtt) :
+MyAboutListener::MyAboutListener(std::weak_ptr<ajn::BusAttachment> _busAtt) :
 busAtt(_busAtt)
 {
 }

@@ -5,9 +5,9 @@
 class MyBusListener : public ajn::BusListener, public ajn::SessionPortListener
 {
 private:
-	ajn::BusAttachment* busAtt;
+	std::weak_ptr<ajn::BusAttachment> busAtt;
 public:
-	MyBusListener(ajn::BusAttachment* _busAtt);
+	MyBusListener(std::weak_ptr<ajn::BusAttachment> _busAtt);
 	void NameOwnerChanged(const char* busName, const char* previousOwner, const char* newOwner);
 	bool AcceptSessionJoiner(ajn::SessionPort sessionPort, const char* joiner, const ajn::SessionOpts& opts);
 	void FoundAdvertisedName(const char* name, ajn::TransportMask transport, const char* namePrefix);

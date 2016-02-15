@@ -4,7 +4,7 @@ using namespace qcc;
 using namespace ajn;
 using namespace services;
 
-MyBusListener::MyBusListener(ajn::BusAttachment* _busAtt) :
+MyBusListener::MyBusListener(std::weak_ptr<ajn::BusAttachment> _busAtt) :
 busAtt(_busAtt)
 {
 };

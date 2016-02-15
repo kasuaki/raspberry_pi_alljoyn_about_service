@@ -8,56 +8,81 @@ MyBusController::MyBusController(std::function<void(int)> _digitalWrite) :
 DigitalWrite(_digitalWrite)
 {
 	AllJoynInit();
-	//AllJoynRouterInit();
+	AllJoynRouterInit();
 
 	printf("AllJoyn Library version: %s.\n", ajn::GetVersion());
+
+	// change loglevel to debug:
+	QCC_SetLogLevels("ALLJOYN_ABOUT_CLIENT=7");
+	QCC_SetLogLevels("ALLJOYN_ABOUT_ICON_CLIENT=7");
+	QCC_SetLogLevels("ALLJOYN_ABOUT_ANNOUNCE_HANDLER=7");
+	QCC_SetLogLevels("ALLJOYN_ABOUT_ANNOUNCEMENT_REGISTRAR=7");
+
+	QCC_SetDebugLevel(logModules::NOTIFICATION_MODULE_LOG_NAME, logModules::ALL_LOG_LEVELS);
 
 	busAtt = std::shared_ptr<ajn::BusAttachment>(new ajn::BusAttachment("LightAbout", true));
 	busAtt->Start();
 	busAtt->Connect();
 
-	aboutListener = std::shared_ptr<MyAboutListener>(new MyAboutListener(busAtt));
-	busAtt->RegisterAboutListener(*aboutListener);
-
-	auto nsrv = ajn::services::NotificationService::getInstance();
-	notificationReceiver = std::unique_ptr<MyNotificationReceiver>(new MyNotificationReceiver([](int b) {}));
-	nsrv->initReceive(busAtt.get(), notificationReceiver.get());
-
-	const ajn::InterfaceDescription* intf = createInterfaceDescription(busAtt.get());
-
-	busListener = std::unique_ptr<MyBusListener>(new MyBusListener(busAtt.get()));
-	busAtt->RegisterBusListener(*busListener);
-
-	busObj = new MyBusObject(Const::SERVICE_PATH, intf);
+	busObj = std::unique_ptr<MyBusObject>(new MyBusObject(Const::SERVICE_PATH, createInterfaceDescription(busAtt)));
 	busAtt->RegisterBusObject(*busObj);
 
-	ntfServ = ajn::services::NotificationService::getInstance();
-	QCC_SetDebugLevel(logModules::NOTIFICATION_MODULE_LOG_NAME, logModules::ALL_LOG_LEVELS);
+	aboutListener = std::unique_ptr<MyAboutListener>(new MyAboutListener(busAtt));
+	busAtt->RegisterAboutListener(*aboutListener);
+
+	busListener = std::unique_ptr<MyBusListener>(new MyBusListener(busAtt));
+	busAtt->RegisterBusListener(*busListener);
+
+	aboutData = std::unique_ptr<ajn::AboutData>(getAboutData());
+
+	auto ntfServ = ajn::services::NotificationService::getInstance();
+
+	bindSendNotification = std::bind(&MyBusController::SendNotification, this, std::placeholders::_1);
+
+	ntfRecv = std::unique_ptr<MyNotificationReceiver>(new MyNotificationReceiver(bindSendNotification));
+	ntfServ->initReceive(busAtt.get(), ntfRecv.get());
 
 	ajn::SessionPort sp = Const::SERVICE_PORT;
 	ajn::SessionOpts opts(ajn::SessionOpts::TRAFFIC_MESSAGES, false, ajn::SessionOpts::PROXIMITY_ANY, TRANSPORT_ANY);
 	busAtt->BindSessionPort(sp, opts, *busListener);
 
-	aboutData = std::unique_ptr<ajn::AboutData>(getAboutData());
+	ntfSender = ntfServ->initSend(busAtt.get(), aboutData.get());
 
-	ntfSender = std::unique_ptr<ajn::services::NotificationSender>(ntfServ->initSend(busAtt.get(), aboutData.get()));
-
-	aboutObj = new AboutObj(*busAtt, BusObject::ANNOUNCED);
+	aboutObj = std::unique_ptr<AboutObj>(new AboutObj(*busAtt, BusObject::ANNOUNCED));
 	aboutObj->Announce(sp, *aboutData);
+
 	busAtt->WhoImplements(NULL);
+
+	// デバッグ用.定期で発振.
+	bool ret = false;
+    rxcpp::observable<>::interval(std::chrono::steady_clock::now() + std::chrono::seconds(5), std::chrono::seconds(3), rxcpp::observe_on_new_thread())
+	.subscribe([&ret, this](long l){
+		ret = !ret;
+		bindSendNotification(ret);
+	});
 };
 
 MyBusController::~MyBusController()
 {
-	ntfServ->shutdown();
-	ntfServ = nullptr;
-	aboutObj->Unannounce();
-	delete aboutObj;
-	aboutObj = nullptr;
-	delete busObj;
-	busObj = nullptr;
+	printf("~MyBusController\n");
 
-	//AllJoynRouterShutdown();
+	aboutObj->Unannounce();
+	aboutObj.reset(nullptr);
+
+	auto ntfServ = ajn::services::NotificationService::getInstance();
+	ntfServ->shutdown();
+
+	busAtt->Disconnect();
+	busAtt->Stop();
+
+	busAtt.reset();
+	busListener.reset(nullptr);
+	aboutListener.reset(nullptr);
+	busObj.reset(nullptr);
+	aboutData.reset(nullptr);
+	ntfRecv.reset(nullptr);
+
+	AllJoynRouterShutdown();
 	AllJoynShutdown();
 };
 
@@ -71,7 +96,7 @@ ajn::AboutData* MyBusController::getAboutData()
 	aboutData->SetAppId(appId, 16);
 	aboutData->SetDeviceName("Lightデバイス");
 	aboutData->SetDeviceId("930b90a1-3d46-4342-ba3a-5ec8c5619572");
-	aboutData->SetAppName("Lightアプリ");
+	aboutData->SetAppName("LightApp");
 	aboutData->SetManufacturer("自作");
 	aboutData->SetModelNumber("0");
 	aboutData->SetDescription("ライトON/OFF");
@@ -83,7 +108,7 @@ ajn::AboutData* MyBusController::getAboutData()
 	return aboutData;
 };
 
-const ajn::InterfaceDescription* MyBusController::createInterfaceDescription(ajn::BusAttachment* _busAtt)
+const ajn::InterfaceDescription* MyBusController::createInterfaceDescription(std::shared_ptr<ajn::BusAttachment> _busAtt)
 {
 	qcc::String iface = "<node name='" + qcc::String(Const::SERVICE_PATH) + "'>"
 	"<interface name='" + qcc::String(Const::INTERFACE_NAME) + "'>"
@@ -104,6 +129,7 @@ const ajn::InterfaceDescription* MyBusController::createInterfaceDescription(ajn
 
 QStatus MyBusController::SendNotification(bool ret)
 {
+//	this.DigitalWrite(ret ? 1, 0);
 	std::string str(ret ? "true" : "false");
 	std::string text("light: " + str);
 
@@ -112,7 +138,7 @@ QStatus MyBusController::SendNotification(bool ret)
 	time(&timer);
 
 	struct tm* localTime = localtime(&timer);
-	printf("Send Notification(%s): %02d:%02d:%02d\n", str.c_str(), localTime->tm_hour, localTime->tm_min, localTime->tm_sec);
+	printf("%d Send Notification(%s): %02d:%02d:%02d\n", ret, str.c_str(), localTime->tm_hour, localTime->tm_min, localTime->tm_sec);
 
 	std::vector<NotificationText> vecMessages = {
 		NotificationText("ja", qcc::String(text.c_str(), text.size()))

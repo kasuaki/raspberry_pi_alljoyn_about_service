@@ -9,21 +9,22 @@
 class MyBusController
 {
 private:
-	std::shared_ptr<ajn::BusAttachment> busAtt = nullptr;
-	MyBusObject* busObj = nullptr;
+	std::shared_ptr<ajn::BusAttachment> busAtt;
+	std::unique_ptr<MyBusObject> busObj;
 	std::unique_ptr<MyBusListener> busListener;
-	ajn::AboutObj* aboutObj = nullptr;
+	std::unique_ptr<ajn::AboutObj> aboutObj;
 	std::unique_ptr<ajn::AboutData> aboutData;
-	ajn::services::NotificationService* ntfServ;
-	std::unique_ptr<ajn::services::NotificationSender> ntfSender;
-	const ajn::InterfaceDescription::Member* sensed = nullptr;
-	std::function<void(int)> DigitalWrite = nullptr;
-	std::shared_ptr<MyAboutListener> aboutListener;
-	std::unique_ptr<MyNotificationReceiver> notificationReceiver;
+	std::unique_ptr<MyAboutListener> aboutListener;
+	std::unique_ptr<MyNotificationReceiver> ntfRecv;
+	ajn::services::NotificationSender* ntfSender;
 	const ajn::InterfaceDescription::Member* lit = nullptr;
 
+	std::function<void(int)> DigitalWrite;
+	std::function<void(bool)> bindSendNotification;
+
 	ajn::AboutData* getAboutData();
-	const ajn::InterfaceDescription* createInterfaceDescription(ajn::BusAttachment* _busAtt);
+	const ajn::InterfaceDescription* createInterfaceDescription(std::shared_ptr<ajn::BusAttachment> _busAtt);
+
 public:
 	MyBusController(std::function<void(int)> _digitalWrite);
 	~MyBusController();
