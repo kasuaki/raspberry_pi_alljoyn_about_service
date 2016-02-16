@@ -54,18 +54,15 @@ DigitalWrite(_digitalWrite)
 	busAtt->WhoImplements(NULL);
 
 	// デバッグ用.定期で発振.
-	bool ret = false;
-    rxcpp::observable<>::interval(std::chrono::steady_clock::now() + std::chrono::seconds(5), std::chrono::seconds(3), rxcpp::observe_on_new_thread())
-	.subscribe([&ret, this](long l){
-		ret = !ret;
-		bindSendNotification(ret);
-	});
+//    rxcpp::observable<>::interval(std::chrono::steady_clock::now() + std::chrono::seconds(5), std::chrono::seconds(5), rxcpp::observe_on_new_thread())
+//	.subscribe([this](long l){
+//		debugB = !debugB;
+//		bindSendNotification(debugB);
+//	});
 };
 
 MyBusController::~MyBusController()
 {
-	printf("~MyBusController\n");
-
 	aboutObj->Unannounce();
 	aboutObj.reset(nullptr);
 
@@ -129,7 +126,9 @@ const ajn::InterfaceDescription* MyBusController::createInterfaceDescription(std
 
 QStatus MyBusController::SendNotification(bool ret)
 {
-//	this.DigitalWrite(ret ? 1, 0);
+	int val = ret ? 1 : 0;
+	DigitalWrite(val);
+	SendSignal(ret);
 	std::string str(ret ? "true" : "false");
 	std::string text("light: " + str);
 

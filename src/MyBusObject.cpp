@@ -23,7 +23,7 @@ QStatus MyBusObject::Get(const char* ifcName, const char* propName, ajn::MsgArg&
 
 	QStatus status = ER_OK;
 
-	if (0 == strcmp("sense", propName)) {
+	if (0 == strcmp("light", propName)) {
 
 		val.typeId = ALLJOYN_BOOLEAN;
 		val.v_bool = senseProp;

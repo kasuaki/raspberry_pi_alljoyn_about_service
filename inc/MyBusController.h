@@ -25,6 +25,7 @@ private:
 	ajn::AboutData* getAboutData();
 	const ajn::InterfaceDescription* createInterfaceDescription(std::shared_ptr<ajn::BusAttachment> _busAtt);
 
+	bool debugB = false;
 public:
 	MyBusController(std::function<void(int)> _digitalWrite);
 	~MyBusController();
