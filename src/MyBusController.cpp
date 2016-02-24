@@ -27,9 +27,6 @@ DigitalWrite(_digitalWrite)
 	busObj = std::unique_ptr<MyBusObject>(new MyBusObject(Const::SERVICE_PATH, createInterfaceDescription(busAtt)));
 	busAtt->RegisterBusObject(*busObj);
 
-	aboutListener = std::unique_ptr<MyAboutListener>(new MyAboutListener(busAtt));
-	busAtt->RegisterAboutListener(*aboutListener);
-
 	busListener = std::unique_ptr<MyBusListener>(new MyBusListener(busAtt));
 	busAtt->RegisterBusListener(*busListener);
 
@@ -38,6 +35,9 @@ DigitalWrite(_digitalWrite)
 	auto ntfServ = ajn::services::NotificationService::getInstance();
 
 	bindSendNotification = std::bind(&MyBusController::SendNotification, this, std::placeholders::_1);
+
+	aboutListener = std::unique_ptr<MyAboutListener>(new MyAboutListener(busAtt, bindSendNotification));
+	busAtt->RegisterAboutListener(*aboutListener);
 
 	ntfRecv = std::unique_ptr<MyNotificationReceiver>(new MyNotificationReceiver(bindSendNotification));
 	ntfServ->initReceive(busAtt.get(), ntfRecv.get());

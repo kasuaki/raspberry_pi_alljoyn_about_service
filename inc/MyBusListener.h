@@ -2,7 +2,7 @@
 
 #include "Common.h"
 
-class MyBusListener : public ajn::BusListener, public ajn::SessionPortListener
+class MyBusListener : public ajn::BusListener, public ajn::SessionPortListener, public ajn::SessionListener
 {
 private:
 	std::weak_ptr<ajn::BusAttachment> busAtt;
@@ -17,4 +17,7 @@ public:
 	void BusStopping();
 	void BusDisconnected();
 	void SessionJoined(ajn::SessionPort sessionPort, ajn::SessionId id, const char* joiner);
+	void SessionLost(ajn::SessionId sessionId, ajn::SessionListener::SessionLostReason reason);
+	void SessionMemberAdded(ajn::SessionId sessionId, const char* uniqueName);
+	void SessionMemberRemoved(ajn::SessionId sessionId, const char* uniqueName);
 };

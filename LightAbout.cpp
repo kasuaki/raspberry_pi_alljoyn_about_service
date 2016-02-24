@@ -10,7 +10,7 @@ const char* Const::SERVICE_NAME = "SensorLightCamera";
 const char* Const::SERVICE_PATH = "/Light";
 const ajn::SessionPort Const::SERVICE_PORT = 25;
 
-static const int pin_out = 18;
+static const int pin_out = 1;
 
 static void DigitalWrite(int value)
 {

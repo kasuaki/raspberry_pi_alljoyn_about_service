@@ -36,13 +36,11 @@
 #endif
 
 #elif defined(__GNUG__)
-
-#ifndef GCC_VERSION
+/*
 #define GCC_VERSION (__GNUC__ * 10000 + \
                      __GNUC_MINOR__ * 100 + \
                      __GNUC_PATCHLEVEL__)
-#endif
-
+*/
 #if GCC_VERSION >= 40801
 #define RXCPP_USE_RVALUEREF 1
 #endif
@@ -132,6 +130,9 @@
 #include <initializer_list>
 #include <typeinfo>
 #include <tuple>
+#include <unordered_set>
+#include <type_traits>
+#include <utility>
 
 #if defined(RXCPP_ON_IOS) || defined(RXCPP_ON_ANDROID)
 #include <pthread.h>

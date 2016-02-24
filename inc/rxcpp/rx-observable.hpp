@@ -838,6 +838,22 @@ public:
         return                    lift<rxu::value_type_t<rxo::detail::map<T, Selector>>>(rxo::detail::map<T, Selector>(std::move(s)));
     }
 
+     /*! For each item from this observable, filter out repeated values and emit only items that have not already been emitted.
+
+        \return  Observable that emits those items from the source observable that are distinct.
+
+        \sample
+        \snippet distinct.cpp distinct sample
+        \snippet output.txt distinct sample
+    */
+    auto distinct() const
+        /// \cond SHOW_SERVICE_MEMBERS
+        -> decltype(EXPLICIT_THIS lift<T>(rxo::detail::distinct<T>()))
+        /// \endcond
+    {
+        return                    lift<T>(rxo::detail::distinct<T>());
+    }
+
     /*! For each item from this observable, filter out consequentially repeated values and emit only changes from the new observable that is returned.
 
         \return  Observable that emits those items from the source observable that are distinct from their immediate predecessors.
@@ -852,6 +868,24 @@ public:
         /// \endcond
     {
         return                    lift<T>(rxo::detail::distinct_until_changed<T>());
+    }
+
+    /*! Pulls an item located at a specified index location in the sequence of items and emits that item as its own sole emission.
+
+        \param  index  the index of the element to return.
+
+        \return  An observable that emit an item located at a specified index location.
+
+        \sample
+        \snippet element_at.cpp element_at sample
+        \snippet output.txt element_at sample
+    */
+    auto element_at(int index) const
+        /// \cond SHOW_SERVICE_MEMBERS
+        ->      decltype(EXPLICIT_THIS lift<T>(rxo::detail::element_at<T>(index)))
+        /// \endcond
+    {
+        return                    lift<T>(rxo::detail::element_at<T>(index));
     }
 
     /*! Rerurn an observable that emits connected, non-overlapping windows, each containing at most count items from the source observable.

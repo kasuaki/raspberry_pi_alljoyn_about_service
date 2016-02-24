@@ -3,9 +3,9 @@
 CXX:=/usr/bin/arm-linux-gnueabihf-g++
 LD:=/usr/bin/arm-linux-gnueabihf-gcc
 
-OBJS:= LightAbout.o MyBusObject.o MyBusListener.o MyBusController.o MyAboutListener.o MyNotificationReceiver.o
+OBJS:= LightAbout.o MyBusObject.o MyBusListener.o MyBusController.o MyAboutListener.o MyNotificationReceiver.o SensorRecvObject.o
 
-CXXFLAGS:=-std=gnu++11 -g -march=armv6 -mthumb-interwork -pipe \
+CXXFLAGS:=-std=gnu++11  -march=armv6 -mthumb-interwork -pipe \
           -Wall -Werror -Wl,--fix-cortex-a8 \
           -fno-exceptions -fno-strict-aliasing -fno-asynchronous-unwind-tables -fno-unwind-tables -ffunction-sections -fdata-sections -fexceptions \
           -Wno-long-long -Wno-deprecated -Wno-unknown-pragmas -Wno-unused-parameter -Wno-deprecated-declarations -Wno-return-type \
@@ -50,6 +50,10 @@ MyAboutListener.o: src/MyAboutListener.cpp
 
 #.PHONY: MyNotificationReceiver.o
 MyNotificationReceiver.o: src/MyNotificationReceiver.cpp 
+	$(CXX) -o $@ -c $< $(CXXFLAGS) $(INCLUDES) 
+
+#.PHONY: SensorRecvObject.o
+SensorRecvObject.o: src/SensorRecvObject.cpp 
 	$(CXX) -o $@ -c $< $(CXXFLAGS) $(INCLUDES) 
 
 .PHONY: clean

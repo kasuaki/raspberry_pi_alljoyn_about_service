@@ -56,3 +56,17 @@ void MyBusListener::SessionJoined(ajn::SessionPort sessionPort, ajn::SessionId i
 {
 	SessionPortListener::SessionJoined(sessionPort, id, joiner);
 };
+
+void MyBusListener::SessionLost(ajn::SessionId sessionId, ajn::SessionListener::SessionLostReason reason)
+{
+	SessionListener::SessionLost(sessionId, reason);
+};
+void MyBusListener::SessionMemberAdded(ajn::SessionId sessionId, const char* uniqueName)
+{
+	SessionListener::SessionMemberAdded(sessionId, uniqueName);
+};
+void MyBusListener::SessionMemberRemoved(ajn::SessionId sessionId, const char* uniqueName)
+{
+	SessionListener::SessionMemberRemoved(sessionId, uniqueName);
+};
+
