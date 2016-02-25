@@ -12,13 +12,86 @@ DigitalWrite(_digitalWrite)
 
 	printf("AllJoyn Library version: %s.\n", ajn::GetVersion());
 
+	log = fopen("log.log", "w+");
+	QCC_RegisterOutputFile(log);
 	// change loglevel to debug:
-	QCC_SetLogLevels("ALLJOYN_ABOUT_CLIENT=7");
-	QCC_SetLogLevels("ALLJOYN_ABOUT_ICON_CLIENT=7");
-	QCC_SetLogLevels("ALLJOYN_ABOUT_ANNOUNCE_HANDLER=7");
-	QCC_SetLogLevels("ALLJOYN_ABOUT_ANNOUNCEMENT_REGISTRAR=7");
+	QCC_SetLogLevels("ALL=15");
+	QCC_SetLogLevels("ALARM=15");
+	QCC_SetLogLevels("ALLJOYN=15");
+	QCC_SetLogLevels("ALLJOYN_ABOUT=15");
+	QCC_SetLogLevels("ALLJOYN_ABOUT_ANNOUNCE_HANDLER=15");
+	QCC_SetLogLevels("ALLJOYN_ABOUT_ANNOUNCEMENT_REGISTRAR=15");
+	QCC_SetLogLevels("ALLJOYN_ABOUT_CLIENT=15");
+	QCC_SetLogLevels("ALLJOYN_ABOUT_ICON_CLIENT=15");
+	QCC_SetLogLevels("ALLJOYN_ABOUT_ICON_SERVICE=15");
+	QCC_SetLogLevels("ALLJOYN_ABOUT_PROPERTYSTORE=15");
+	QCC_SetLogLevels("ALLJOYN_ABOUT_SERVICE=15");
+	QCC_SetLogLevels("ALLJOYN_AUTH=15");
+	QCC_SetLogLevels("ALLJOYN_C=15");
+	QCC_SetLogLevels("ALLJOYN_DAEMON=15");
+	QCC_SetLogLevels("ALLJOYN_JAVA=15");
+	QCC_SetLogLevels("ALLJOYN_JS=15");
+	QCC_SetLogLevels("ALLJOYN_OBJ=15");
+	QCC_SetLogLevels("ALLJOYN_OBSERVER_TEST=15");
+	QCC_SetLogLevels("ALLJOYN_PBO=15");
+	QCC_SetLogLevels("ALLJOYN_ROUTER=15");
+	QCC_SetLogLevels("ALLJOYN_SECURITY=15");
+	QCC_SetLogLevels("ARDP=15");
+	QCC_SetLogLevels("ARDP_PROTOCOL=15");
+	QCC_SetLogLevels("AUTH_KEY_EXCHANGER=15");
+	QCC_SetLogLevels("AUTOPINGER=15");
+	QCC_SetLogLevels("BASTRESS2=15");
+	QCC_SetLogLevels("CONDITION=15");
+	QCC_SetLogLevels("CONFIG=15");
+	QCC_SetLogLevels("CONVERSATION_HASH=15");
+	QCC_SetLogLevels("CONVERT_UTF=15");
+	QCC_SetLogLevels("CRYPTO=15");
+	QCC_SetLogLevels("DAEMON_SLAP=15");
+	QCC_SetLogLevels("DAEMON_TRANSPORT=15");
+	QCC_SetLogLevels("DEBUG=15");
+	QCC_SetLogLevels("ENDPOINT_AUTH=15");
+	QCC_SetLogLevels("ENVIRON=15");
+	QCC_SetLogLevels("EVENT=15");
+	QCC_SetLogLevels("GUID=15");
+	QCC_SetLogLevels("IFCONFIG=15");
+	QCC_SetLogLevels("IODISPATCH=15");
+	QCC_SetLogLevels("IPNS=15");
+	QCC_SetLogLevels("LOCAL_TRANSPORT=15");
+	QCC_SetLogLevels("MUTEX=15");
+	QCC_SetLogLevels("NETWORK=15");
+	QCC_SetLogLevels("NS=15");
+	QCC_SetLogLevels("NULL_TRANSPORT=15");
+	QCC_SetLogLevels("OBSERVER=15");
+	QCC_SetLogLevels("PBO_TEST=15");
+	QCC_SetLogLevels("PERMISSION_MGMT=15");
+	QCC_SetLogLevels("PERMISSION_MGR=15");
+	QCC_SetLogLevels("POLICYDB=15");
+	QCC_SetLogLevels("ROUTER=15");
+	QCC_SetLogLevels("RWLOCK=15");
+	QCC_SetLogLevels("SESSIONLESS=15");
+	QCC_SetLogLevels("SLAP=15");
+	QCC_SetLogLevels("STATICGLOBALS=15");
+	QCC_SetLogLevels("STREAM=15");
+	QCC_SetLogLevels("TCP=15");
+	QCC_SetLogLevels("TEST=15");
+	QCC_SetLogLevels("THREAD=15");
+	QCC_SetLogLevels("THREADPOOL=15");
+	QCC_SetLogLevels("TIMER=15");
+	QCC_SetLogLevels("TRUSTED_TL_SAMPLE_RN=15");
+	QCC_SetLogLevels("TXSTATS=15");
+	QCC_SetLogLevels("UART=15");
+	QCC_SetLogLevels("UDP=15");
+	QCC_SetLogLevels("UTIL=15");
+	QCC_SetLogLevels("UTILITY=15");
+	QCC_SetLogLevels("XML=15");
 
 	QCC_SetDebugLevel(logModules::NOTIFICATION_MODULE_LOG_NAME, logModules::ALL_LOG_LEVELS);
+	QCC_SetDebugLevel(logModules::CONTROLPANEL_MODULE_LOG_NAME, logModules::ALL_LOG_LEVELS);
+	QCC_SetDebugLevel(logModules::ONBOARDING_MODULE_LOG_NAME, logModules::ALL_LOG_LEVELS);
+	QCC_SetDebugLevel(logModules::CONFIG_MODULE_LOG_NAME, logModules::ALL_LOG_LEVELS);
+	QCC_SetDebugLevel(logModules::SERVICES_COMMON_MODULE_LOG_NAME, logModules::ALL_LOG_LEVELS);
+	QCC_SetDebugLevel(logModules::TIME_MODULE_LOG_NAME, logModules::ALL_LOG_LEVELS);
+
 
 	busAtt = std::shared_ptr<ajn::BusAttachment>(new ajn::BusAttachment("LightAbout", true));
 	busAtt->Start();
@@ -39,14 +112,14 @@ DigitalWrite(_digitalWrite)
 	aboutListener = std::unique_ptr<MyAboutListener>(new MyAboutListener(busAtt, bindSendNotification));
 	busAtt->RegisterAboutListener(*aboutListener);
 
-	ntfRecv = std::unique_ptr<MyNotificationReceiver>(new MyNotificationReceiver(bindSendNotification));
-	ntfServ->initReceive(busAtt.get(), ntfRecv.get());
+//	ntfRecv = std::unique_ptr<MyNotificationReceiver>(new MyNotificationReceiver(bindSendNotification));
+//	ntfServ->initReceive(busAtt.get(), ntfRecv.get());
 
 	ajn::SessionPort sp = Const::SERVICE_PORT;
 	ajn::SessionOpts opts(ajn::SessionOpts::TRAFFIC_MESSAGES, false, ajn::SessionOpts::PROXIMITY_ANY, TRANSPORT_ANY);
 	busAtt->BindSessionPort(sp, opts, *busListener);
 
-	ntfSender = ntfServ->initSend(busAtt.get(), aboutData.get());
+	ntfSender = std::unique_ptr<ajn::services::NotificationSender>(ntfServ->initSend(busAtt.get(), aboutData.get()));
 
 	aboutObj = std::unique_ptr<AboutObj>(new AboutObj(*busAtt, BusObject::ANNOUNCED));
 	aboutObj->Announce(sp, *aboutData);
@@ -63,13 +136,42 @@ DigitalWrite(_digitalWrite)
 
 MyBusController::~MyBusController()
 {
-	aboutObj->Unannounce();
-	aboutObj.reset(nullptr);
+	printf("~MyBusController\n");
+	for (auto tpl : aboutListener->listenList) {
+		printf("tpl: %d\n", std::get<0>(tpl));
+		busAtt->LeaveSession(std::get<0>(tpl));
+		delete std::get<2>(tpl);
 
+		busAtt->UnregisterBusObject(*(std::get<3>(tpl)));
+		delete std::get<3>(tpl);
+	}
+
+	ntfSender->deleteLastMsg(NotificationMessageType(INFO));
+	ntfSender.reset(nullptr);
+
+	printf("ntfServ->shutdown\n");
 	auto ntfServ = ajn::services::NotificationService::getInstance();
 	ntfServ->shutdown();
 
+	printf("Unannounce\n");
+	aboutObj->Unannounce();
+	aboutObj.reset(nullptr);
+
+	printf("UnbindSessionPort\n");
+	busAtt->UnbindSessionPort(Const::SERVICE_PORT);
+
+	printf("CancelWhoImplements\n");
+	busAtt->CancelWhoImplements(NULL);
+
+	busAtt->CancelFindAdvertisedName(NULL);
+
+	busAtt->UnregisterAboutListener(*aboutListener);
+	busAtt->UnregisterBusListener(*busListener);
+	busAtt->UnregisterBusObject(*busObj);
+
+	printf("Disconnect\n");
 	busAtt->Disconnect();
+	printf("Stop\n");
 	busAtt->Stop();
 
 	busAtt.reset();
@@ -77,10 +179,12 @@ MyBusController::~MyBusController()
 	aboutListener.reset(nullptr);
 	busObj.reset(nullptr);
 	aboutData.reset(nullptr);
-	ntfRecv.reset(nullptr);
+//	ntfRecv.reset(nullptr);
 
 	AllJoynRouterShutdown();
 	AllJoynShutdown();
+
+	fclose(log);
 };
 
 ajn::AboutData* MyBusController::getAboutData()
@@ -128,7 +232,6 @@ QStatus MyBusController::SendNotification(bool ret)
 {
 	int val = ret ? 1 : 0;
 	DigitalWrite(val);
-	SendSignal(ret);
 	std::string str(ret ? "true" : "false");
 	std::string text("light: " + str);
 
@@ -151,30 +254,4 @@ QStatus MyBusController::SendNotification(bool ret)
 	notification.setCustomAttributes(customAttributes);
 
 	return ntfSender->send(notification, 7200);
-};
-
-void MyBusController::SendSignal(bool ret)
-{
-	busObj->SetSenseProp(ret);
-
-	ajn::MsgArg* arg = new MsgArg(ALLJOYN_BOOLEAN);
-	arg->v_bool = ret;
-
-	time_t timer;
-
-	/* 現在時刻の取得 */
-	time(&timer);
-
-	struct tm* localTime = localtime(&timer);
-
-	printf("Send Signal(%d): %02d:%02d:%02d\n", ret, localTime->tm_hour, localTime->tm_min, localTime->tm_sec);
-
-	busObj->Signal(NULL,							// NULL for broadcast signals.
-					0,								// For broadcast or sessionless signals, the sessionId must be 0.
-					*lit,						// Interface member of signal being emitted.
-					arg, 							// The arguments for the signal (can be NULL).
-					1, 								// The number of arguments.
-					0, 								// timeToLive.
-					ALLJOYN_FLAG_GLOBAL_BROADCAST	// broadcast signal (null destination) will be forwarded to all Routing Nodes in the system.
-	);
 };

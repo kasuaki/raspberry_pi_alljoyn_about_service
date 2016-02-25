@@ -8,7 +8,7 @@ SensorRecvObject::SensorRecvObject(std::shared_ptr<BusAttachment> _busAtt, const
 BusObject(path),
 busAtt(_busAtt), func(_func)
 {
-	AddInterface(_intf);
+//	AddInterface(_intf);
 
 	size_t val = _intf.GetMembers(NULL);					// ƒƒ“ƒo”æ“¾.
 	std::vector<const ajn::InterfaceDescription::Member*> vec(val);	// —ÌˆæŠm•Û.

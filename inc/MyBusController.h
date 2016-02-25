@@ -15,9 +15,10 @@ private:
 	std::unique_ptr<ajn::AboutObj> aboutObj;
 	std::unique_ptr<ajn::AboutData> aboutData;
 	std::unique_ptr<MyAboutListener> aboutListener;
-	std::unique_ptr<MyNotificationReceiver> ntfRecv;
-	ajn::services::NotificationSender* ntfSender;
+//	std::unique_ptr<MyNotificationReceiver> ntfRecv;
+	std::unique_ptr<ajn::services::NotificationSender> ntfSender;
 	const ajn::InterfaceDescription::Member* lit = nullptr;
+	FILE *log;
 
 	std::function<void(int)> DigitalWrite;
 	std::function<void(bool)> bindSendNotification;

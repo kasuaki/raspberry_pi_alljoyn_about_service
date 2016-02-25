@@ -44,8 +44,8 @@ void MyAboutListener::Announced(const char* busName, uint16_t version, ajn::Sess
 			SensorRecvObject* sensorRecvObject = new SensorRecvObject(busAtt, path, *intf, func);
 
 			busAtt->RegisterBusObject(*sensorRecvObject);
-			busAtt->AddMatch("type='signal',interface='org.freedesktop.DBus.Properties");
-			listenList.push_back(std::make_tuple(path, listener, sensorRecvObject));
+			busAtt->AddMatch("type='signal',interface='org.freedesktop.DBus.Properties,member='PropertiesChanged'");
+			listenList.push_back(std::make_tuple(sessionId, path, listener, sensorRecvObject));
 		}
 	}
 }
